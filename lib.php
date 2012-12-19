@@ -155,6 +155,7 @@ function kalvidres_get_participants($kalvidresid) {
  */
 function kalvidres_supports($feature) {
     switch($feature) {
+        case FEATURE_MOD_ARCHETYPE:           return MOD_ARCHETYPE_RESOURCE;
         case FEATURE_GROUPS:                  return true;
         case FEATURE_GROUPINGS:               return true;
         case FEATURE_GROUPMEMBERSONLY:        return true;
@@ -166,16 +167,4 @@ function kalvidres_supports($feature) {
 
         default: return null;
     }
-}
-
-/**
- * Makes this module appear in the resources drop down
- */
-function kalvidres_get_types() {
-    $type = new stdClass();
-    $type->modclass = MOD_CLASS_RESOURCE;
-    $type->type     = 'kalvidres';
-    $type->typestr  = get_string('modulename', 'kalvidres');
-
-    return array($type);
 }

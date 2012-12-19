@@ -14,22 +14,35 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Kaltura video resource capability definition
+ *
  * @package mod
  * @subpackage kalvidres
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
  */
 
-if (!defined('MOODLE_INTERNAL')) {
-    die('Direct access to this script is forbidden.');    ///  It must be included from a Moodle page
-}
+$capabilities = array(
 
-$module->version    = 2012121900;
-$module->component  = 'mod_kalvidres';
-$module->release    = 'Kaltura release 3.0.91';
-$module->requires   = 2011033007;
-$module->cron       = 0;
+    'mod/kalvidres:addinstance' => array(
+        'riskbitmask' => RISK_XSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => array(
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW
+        ),
+        'clonepermissionsfrom' => 'moodle/course:manageactivities'
+    ),
 
-$module->dependencies = array(
-    'local_kaltura' => 2012121900
-);
+    'mod/kalvidres:screenrecorder' => array(
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+            'teacher' => CAP_ALLOW
+        )
+   )
+
+ );

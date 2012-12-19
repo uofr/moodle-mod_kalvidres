@@ -56,13 +56,12 @@ $PAGE->set_heading($course->fullname);
 
 // Try connection
 $kaltura = new kaltura_connection();
-$connection = $kaltura->get_connection(true, 86400);
-
+$connection = $kaltura->get_connection(true, KALTURA_SESSION_LENGTH);
 
 if ($connection) {
-    if (has_mobile_flavor_enabled() && get_enable_html5()) {
-        $uiconf_id = get_player_uiconf('player_resource');
-        $url = new moodle_url(htm5_javascript_url($uiconf_id));
+    if (local_kaltura_has_mobile_flavor_enabled() && local_kaltura_get_enable_html5()) {
+        $uiconf_id = local_kaltura_get_player_uiconf('player_resource');
+        $url = new moodle_url(local_kaltura_htm5_javascript_url($uiconf_id));
         $PAGE->requires->js($url, true);
         $url = new moodle_url('/local/kaltura/js/frameapi.js');
         $PAGE->requires->js($url, true);
@@ -91,25 +90,26 @@ echo $OUTPUT->box_end();
 
 if ($connection) {
 
-    // Check if the repository plug-in exists.  Add Kaltura video to 
+    // Check if the repository plug-in exists.  Add Kaltura video to
     // the Kaltura category
     if (!empty($kalvidres->entry_id)) {
 
         $category = false;
-        $enabled = kaltura_repository_enabled();
+
+        $enabled = local_kaltura_kaltura_repository_enabled();
 
         if ($enabled) {
             require_once($CFG->dirroot.'/repository/kaltura/locallib.php');
 
             // Create the course category
-            $category = create_course_category($connection, $course->id);
+            $category = repository_kaltura_create_course_category($connection, $course->id);
         }
 
         if (!empty($category) && $enabled) {
-            add_video_course_reference($connection, $course->id, array($kalvidres->entry_id));
+            repository_kaltura_add_video_course_reference($connection, $course->id, array($kalvidres->entry_id));
         }
     }
-    
+
     echo $renderer->embed_video($kalvidres);
 } else {
     echo $renderer->connection_failure();

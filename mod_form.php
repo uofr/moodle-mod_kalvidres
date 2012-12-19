@@ -35,49 +35,73 @@ class mod_kalvidres_mod_form extends moodleform_mod {
     function definition() {
         global $CFG, $COURSE, $PAGE;
 
-        $PAGE->requires->js('/local/kaltura/js/jquery.js', true);
-        $PAGE->requires->js('/local/kaltura/js/swfobject.js', true);
-        $PAGE->requires->js('/local/kaltura/js/kcwcallback.js', true);
+        $kaltura = new kaltura_connection();
+        $connection = $kaltura->get_connection(true, KALTURA_SESSION_LENGTH);
 
-        $jsmodule = array(
-            'name'     => 'local_kaltura',
-            'fullpath' => '/local/kaltura/js/kaltura.js',
-            'requires' => array('yui2-yahoo-dom-event',
-                                'yui2-container',
-                                'yui2-dragdrop',
-                                'yui2-animation',
-                                'base',
-                                'dom',
-                                'node',
-                                'yui-min',
-                                'event-focus',
-                                'json-parse-min',
-                                ),
-            'strings' => array(
-                    array('upload_successful', 'kalvidres'),
-                    array('video_converting', 'kalvidres'),
-                    array('previewvideo', 'kalvidassign'),
-                    )
-            );
+        $login_session = '';
 
-        $courseid = get_courseid_from_context($PAGE->context);
+        if (!empty($connection)) {
+            $login_session = $connection->getKs();
+        }
 
-        $conversion_script = "../local/kaltura/check_conversion.php?courseid={$courseid}&entry_id=";
+        $PAGE->requires->css('/mod/kalvidres/styles.css');
 
-        $panel_markup   = $this->get_popup_markup();
-        $kcw            = get_kcw('res_uploader', true);
-        $uiconf_id      = get_player_uiconf('player_resource');
+        $partner_id    = local_kaltura_get_partner_id();
+        $sr_unconf_id  = local_kaltura_get_player_uiconf('mymedia_screen_recorder');
+        $host = local_kaltura_get_host();
+        $url = new moodle_url("{$host}/p/{$partner_id}/sp/{$partner_id}/ksr/uiconfId/{$sr_unconf_id}");
+        
+        // This line is needed to avoid a PHP warning when the form is submitted
+        // Because this value is set as the default for one of the formslib elements
+        $uiconf_id = '';
+        
+        // Check if connection to Kaltura can be established
+        if ($connection) {
 
-        $PAGE->requires->js_init_call('M.local_kaltura.video_resource',
-                                      array($conversion_script, $panel_markup, $kcw, $uiconf_id),
-                                      true, $jsmodule);
-
-        if (has_mobile_flavor_enabled() && get_enable_html5()) {
-
-            $url = new moodle_url(htm5_javascript_url($uiconf_id));
             $PAGE->requires->js($url, true);
-            //$url = new moodle_url('/local/kaltura/js/frameapi.js');
-            //$PAGE->requires->js($url, true);
+            $PAGE->requires->js('/local/kaltura/js/screenrecorder.js', true);
+    
+            $PAGE->requires->js('/local/kaltura/js/jquery.js', true);
+            $PAGE->requires->js('/local/kaltura/js/swfobject.js', true);
+            $PAGE->requires->js('/local/kaltura/js/kcwcallback.js', true);
+    
+            $jsmodule = array(
+                'name'     => 'local_kaltura',
+                'fullpath' => '/local/kaltura/js/kaltura.js',
+                'requires' => array('yui2-yahoo-dom-event',
+                                    'yui2-container',
+                                    'yui2-dragdrop',
+                                    'yui2-animation',
+                                    'base',
+                                    'dom',
+                                    'node',
+                                    ),
+                'strings' => array(
+                        array('upload_successful', 'kalvidres'),
+                        array('video_converting', 'kalvidres'),
+                        array('previewvideo', 'kalvidres'),
+                        array('javanotenabled', 'kalvidres')
+                        )
+                );
+    
+            $courseid = get_courseid_from_context($PAGE->context);
+    
+            $conversion_script = "../local/kaltura/check_conversion.php?courseid={$courseid}&entry_id=";
+    
+            $panel_markup           = $this->get_popup_markup();
+            $kcw                    = local_kaltura_get_kcw('res_uploader', true);
+            $uiconf_id              = local_kaltura_get_player_uiconf('player_resource');
+            $progress_bar_markup    = $this->draw_progress_bar();
+    
+            $PAGE->requires->js_init_call('M.local_kaltura.video_resource',
+                                          array($conversion_script, $panel_markup, $kcw, $uiconf_id, $login_session, $partner_id, $progress_bar_markup),
+                                          true, $jsmodule);
+        }
+    
+        if (local_kaltura_has_mobile_flavor_enabled() && local_kaltura_get_enable_html5()) {
+
+            $url = new moodle_url(local_kaltura_htm5_javascript_url($uiconf_id));
+            $PAGE->requires->js($url, true);
         }
 
         $mform =& $this->_form;
@@ -125,7 +149,7 @@ class mod_kalvidres_mod_form extends moodleform_mod {
 
         $this->add_intro_editor(false);
 
-        if (login(true, '')) {
+        if (local_kaltura_login(true, '')) {
             $mform->addElement('header', 'video', get_string('video_hdr', 'kalvidres'));
 
             $this->add_video_definition($mform);
@@ -138,7 +162,26 @@ class mod_kalvidres_mod_form extends moodleform_mod {
         $this->add_action_buttons();
     }
 
+    private function draw_progress_bar() {
+        $attr         = array('id' => 'progress_bar');
+        $progress_bar = html_writer::tag('span', '', $attr);
+
+        $attr          = array('id' => 'slider_border');
+        $slider_border = html_writer::tag('div', $progress_bar, $attr);
+
+        $attr          = array('id' => 'loading_text');
+        $loading_text  = html_writer::tag('div', get_string('scr_loading', 'mod_kalvidres'), $attr);
+
+        $attr   = array('id' => 'progress_bar_container',
+                        'style' => 'width:100px; padding-left:10px; padding-right:10px; visibility: hidden');
+        $output = html_writer::tag('span', $slider_border . $loading_text, $attr);
+
+        return $output;
+
+    }
+
     private function add_video_definition($mform) {
+        global $COURSE;
 
         $thumbnail = $this->get_thumbnail_markup();
         $prop      = array();
@@ -148,6 +191,27 @@ class mod_kalvidres_mod_form extends moodleform_mod {
         if (empty($this->current->entry_id)) {
             $prop = array('style' => 'display:none;');
         }
+
+        $radioarray = array();
+        $attributes = array();
+        $enable_ksr = get_config(KALTURA_PLUGIN_NAME, 'enable_screen_recorder');
+        $context    = null;
+
+        // Check of KSR is enabled via config or capability
+        if (!empty($this->_cm)) {
+            $context       = get_context_instance(CONTEXT_MODULE, $this->_cm->id);
+        } else {
+
+            $context       = get_context_instance(CONTEXT_COURSE, $COURSE->id);
+        }
+
+        if ($enable_ksr && has_capability('mod/kalvidres:screenrecorder', $context)) {
+            $radioarray[] =& $mform->createElement('radio', 'media_method', '', get_string('use_screen_recorder', 'kalvidres'), 1, $attributes);
+        }
+
+        $radioarray[] =& $mform->createElement('radio', 'media_method', '', get_string('use_kcw', 'kalvidres'), 0, $attributes);
+        $mform->addGroup($radioarray, 'radioar', get_string('media_method', 'kalvidres'), array('<br />'), false);
+        $mform->addHelpButton('radioar', 'media_creation', 'kalvidres');
 
         $videogroup = array();
         $videogroup[] =& $mform->createElement('button', 'add_video', get_string('add_video', 'kalvidres'));
@@ -278,7 +342,7 @@ class mod_kalvidres_mod_form extends moodleform_mod {
     private function get_video_resource_players() {
 
         // Get user's players
-        $players = get_custom_players();
+        $players = local_kaltura_get_custom_players();
 
         // Kaltura regular player selection
         $choices = array(KALTURA_PLAYER_PLAYERREGULARDARK  => get_string('player_regular_dark', 'local_kaltura'),
@@ -290,7 +354,7 @@ class mod_kalvidres_mod_form extends moodleform_mod {
         }
 
         // Set default player only if the user is adding a new activity instance
-        $default_player_id = get_player_uiconf('player_resource');
+        $default_player_id = local_kaltura_get_player_uiconf('player_resource');
 
         // If the default player id does not exist in the list of choice
         // then the user must be using a custom player id, add it to the list
@@ -299,7 +363,7 @@ class mod_kalvidres_mod_form extends moodleform_mod {
         }
 
         // Check if player selection is globally overridden
-        if (get_player_override()) {
+        if (local_kaltura_get_player_override()) {
             return array(array( $default_player_id => $choices[$default_player_id]),
                          $default_player_id
                         );

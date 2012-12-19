@@ -2,11 +2,12 @@
 
 $string['modulenameplural'] = 'Kaltura Video Resource';
 $string['modulename'] = 'Kaltura Video Resource';
+$string['modulename_help'] = 'The Kaltura Video Resource enables a teacher to create a resource using a Kaltura video.';
 $string['pluginadministration'] = 'Kaltura Video Resource';
 $string['pluginname'] = 'Kaltura Video Resource';
 $string['name'] = 'Name';
 $string['video_hdr'] = 'Video';
-$string['add_video'] = 'Add video';
+$string['add_video'] = 'Add Media';
 $string['video_properties'] = 'Player properties';
 $string['upload_successful'] = 'Upload Successful';
 $string['video_converting'] = 'Your video is still converting.  Please check the status of your video at a later time.';
@@ -25,3 +26,13 @@ $string['video_preview_header'] = 'Preview';
 $string['invalidid'] = 'Invalid ID';
 $string['replace_video'] = 'Replace video';
 $string['custom_player'] = 'Custom player';
+$string['kalvidres:addinstance'] = 'Add a Kaltura Video Resource';
+$string['use_screen_recorder'] = 'Record screen';
+$string['use_kcw'] = 'Upload media or record from webcam';
+$string['media_method'] = 'Media type';
+$string['media_creation'] = 'Media Type';
+$string['media_creation_help'] = 'Select the method of media you would like to add.  <b>Record Screen</b> will open a screen recording widget, where you can record the actions you make on your desktop.  <b>Upload Media</b> will open the Kaltura Content Wizard where you can upload media from your computer or select previously uploaded media.';
+$string['scr_loading'] = 'Loading...';
+$string['kalvidres:screenrecorder'] = 'Screen recorder';
+$string['javanotenabled'] = 'Browser Java is disabled.  Please enable Java and refresh the page to use the screen recorder.';
+$string['previewvideo'] = 'Preview';

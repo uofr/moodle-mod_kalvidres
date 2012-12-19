@@ -50,23 +50,33 @@ class mod_kalvidres_renderer extends plugin_renderer_base {
         global $PAGE;
 
         $output = '';
-        $entry_obj = get_ready_entry_object($kalvidres->entry_id);
+        $entry_obj = local_kaltura_get_ready_entry_object($kalvidres->entry_id);
 
         if (!empty($entry_obj)) {
+
             // Check if player selection is globally overridden
-            if (get_player_override()) {
-                $new_player = get_player_uiconf('player_resource');
+            if (local_kaltura_get_player_override()) {
+                $new_player = local_kaltura_get_player_uiconf('player_resource');
                 $kalvidres->uiconf_id = $new_player;
             }
 
             $courseid = get_courseid_from_context($PAGE->context);
 
             // Set the session
-            $session = generate_kaltura_session(array($entry_obj->id));
+            $session = local_kaltura_generate_kaltura_session(array($entry_obj->id));
 
             $entry_obj->width = $kalvidres->width;
             $entry_obj->height = $kalvidres->height;
-            $markup = get_kdp_code($entry_obj, $kalvidres->uiconf_id, $courseid, $session);
+
+            // Determine if the mobile theme is being used
+            $theme = get_selected_theme_for_device_type();
+
+            if (0 == strcmp($theme, 'mymobile')) {
+
+                $markup = local_kaltura_get_kwidget_code($entry_obj, $kalvidres->uiconf_id, $courseid, $session);
+            } else {
+                $markup = local_kaltura_get_kdp_code($entry_obj, $kalvidres->uiconf_id, $courseid, $session);
+            }
 
             $output .= html_writer::start_tag('center');
             $output .= html_writer::tag('div', $markup);

@@ -89,7 +89,8 @@ class mod_kalvidres_renderer extends plugin_renderer_base {
                     
             
             } else {
-                if (0 == strcmp($theme, 'mymobile') || 0 == strcmp($theme, 'urmobile')) {
+                //if (0 == strcmp($theme, 'mymobile') || 0 == strcmp($theme, 'urmobile')) {
+                if (core_useragent::is_safari_ios()) {
                     $markup = local_kaltura_get_kwidget_code($entry_obj, $kalvidres->uiconf_id, $courseid, $session);
                 } else {
                     $markup = local_kaltura_get_kdp_code($entry_obj, $kalvidres->uiconf_id, $courseid, $session);

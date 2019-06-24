@@ -168,7 +168,6 @@ if ($kalvidres->internal == 1 and !local_kaltura_check_internal($clientipaddress
                 echo $renderer->embed_media($kalvidres);
             }
         } catch (Exception $ex) {
-            echo $ex;
             echo '<div class="alert alert-warning"><p>';
             echo 'Entry Id <b>' . $kalvidres->entry_id. '</b> could not be found.';
             echo '</p></div>';

@@ -394,3 +394,23 @@ function mod_kalvidres_core_calendar_provide_event_action(calendar_event $event,
         true
     );
 }
+
+    /**
+     * This function is used by the reset_course_userdata function in moodlelib.
+     *
+     * @param object $data the data submitted from the reset course.
+     * @return array status array
+     */
+    function kalvidres_reset_userdata($data) {
+        return array();
+    }
+    
+    /**
+     * This function is used by the reset_course_userdata function in moodlelib.
+     *
+     * @param object $course course object
+     * @return array status array
+     */
+    function kalvidres_reset_course_form_defaults($course) {
+        return array();
+    }

@@ -63,7 +63,7 @@ class restore_kalvidres_activity_structure_step extends restore_activity_structu
     /**
      * Define (add) particular settings this resource can have.
      * @param object $data - array of data.
-     * @return object - kalmediaassign instance.
+     * @return object - kalvidassign instance.
      */
     protected function process_kalvidres($data) {
         global $DB;

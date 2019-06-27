@@ -104,6 +104,23 @@ if ($student == true) {
     ));
     $event->trigger();
 
+    try {
+        $kalvidreslog = $DB->get_record('kalvidres_log',
+                                          array('instanceid' => $cm->instance, 'userid' => $USER->id));
+        $now = time();
+        if (empty($kalvidreslog)) {
+            $objectdata = array('instanceid' => $cm->instance, 'userid' => $USER->id, 'plays' => 0, 'views' => 1,
+                                'first' => $now, 'last' => $now);
+            $DB->insert_record('kalvidres_log', $objectdata);
+        } else {
+            $kalvidreslog->last = $now;
+            $kalvidreslog->views = $kalvidreslog->views + 1;
+            $DB->update_record('kalvidres_log', $kalvidreslog, false);
+        }
+    } catch (Exception $ex) {
+        print_error($ex->getMessage());
+    }
+
     $url = $CFG->wwwroot . '/mod/kalvidres/trigger.php';
     $PAGE->requires->js_call_amd('mod_kalvidres/playtrigger', 'init', array($url, $id));
 }
@@ -173,6 +190,10 @@ if ($kalvidres->internal == 1 and !local_kaltura_check_internal($clientipaddress
             echo 'Entry Id <b>' . $kalvidres->entry_id. '</b> could not be found.';
             echo '</p></div>';
         }
+    }
+
+    if ($student == true && $kalvidres->publish_access_log == 1) {
+        echo $renderer->create_student_playsviews_markup($cm->id, $kalvidres);
     }
 
     if ($teacher == true || $admin == true) {

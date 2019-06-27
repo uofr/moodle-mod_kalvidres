@@ -63,11 +63,13 @@ class mod_kalvidres_mod_form extends moodleform_mod {
         if (!empty($connection)) {
             $loginsession = $connection->getKs();
         }
-
-        $PAGE->requires->css('/mod/kalvidres/css/kalmediares.css');
-        $PAGE->requires->css('/local/kaltura/css/simple_selector.css');
-        $PAGE->requires->js_call_amd('local_kaltura/properties', 'init');
-
+        
+        if (strpos($PAGE->url, 'modedit.php') !== false ) {
+            $PAGE->requires->css('/mod/kalvidres/css/kalvidres.css');
+            $PAGE->requires->css('/local/kaltura/css/simple_selector.css');
+            $PAGE->requires->js_call_amd('local_kaltura/properties', 'init');
+        }
+        
         /*
          * This line is needed to avoid a PHP warning when the form is submitted.
          * Because this value is set as the default for one of the formslib elements.
@@ -131,8 +133,9 @@ class mod_kalvidres_mod_form extends moodleform_mod {
         }
 
         $mform->addRule('name', null, 'required', null, 'client');
+        $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
 
-        $this->standard_intro_elements(get_string('description', 'assign'));
+        $this->standard_intro_elements(get_string('description', 'kalvidres'));
 
         if (local_kaltura_login(true, '')) {
             $mform->addElement('header', 'video', get_string('video_hdr', 'kalvidres'));
@@ -149,8 +152,8 @@ class mod_kalvidres_mod_form extends moodleform_mod {
 
         $this->add_showpreview_option($mform);
 
-        $mform->addElement('header', 'access', get_string('access_hdr', 'kalvidres'));
-        $this->add_access_definition($mform);
+        $mform->addElement('header', 'access_log', get_string('publish_access_log_hdr', 'kalvidres'));
+        $this->add_publish_access_log_definition($mform);
 
         $this->standard_coursemodule_elements();
 
@@ -177,6 +180,28 @@ class mod_kalvidres_mod_form extends moodleform_mod {
 
         return $output;
 
+    }
+
+    /**
+     * This function add "Access Log" part to module form.
+     * @param object $mform - form object.
+     */
+    private function add_publish_access_log_definition($mform) {
+        $accessgroup = array();
+        $options = array('0' => 'No', '1' => 'Yes');
+        $select = $mform->addElement('select', 'publish_access_log', get_string('publish_access_log', 'mod_kalvidres'), $options);
+        $mform->addHelpButton('publish_access_log', 'publish_access_log', 'mod_kalvidres');
+
+        $select->setSelected('0');
+
+        $accessgroup[] =& $select;
+
+        $options = array('0' => '0', '4' => '4', '8' => '8', '12' => '12', '16' => '16', '20' => '20', '24' => '24');
+        $select = $mform->addElement('select', 'exclusion_time', get_string('exclusion_time', 'mod_kalvidres'), $options);
+        $mform->addHelpButton('exclusion_time', 'exclusion_time', 'mod_kalvidres');
+        $select->setSelected('0');
+
+        $accessgroup[] =& $select;
     }
 
     /**
@@ -220,21 +245,41 @@ class mod_kalvidres_mod_form extends moodleform_mod {
             $prop = array('style' => 'display:none;');
         }
 
-		$mediagrouplabel = (!empty($entry_id)) ? 'replace_media' : 'media_select';
-
         $mediagroup = array();
-        $mediagroup[] =& $mform->createElement('button', 'add_media', get_string($mediagrouplabel, 'kalvidres'), array('data-toggle' => 'modal', 'data-target' => '#video_selector_modal'));
 
-        $prop = array('data-toggle' => 'modal', 'data-target' => '#video_properties_modal');
+        if (local_yukaltura_get_mymedia_permission()) {
+            if ($entryid == null || $entryid == '') {
+                $mediagroup[] =& $mform->createElement('button', 'add_media',
+                                                       get_string('add_media', 'kalvidres'), array());
+            } else {
+                $mediagroup[] =& $mform->createElement('button', 'add_media',
+                                                       get_string('replace_media', 'kalvidres'), array());
+            }
+        }
+
+        $prop = array();
 
         if (empty($this->current->entry_id)) {
             $prop += array('style' => 'visibility: hidden;');
         }
 
-        $mediagroup[] =& $mform->createElement('button', 'media_properties', get_string('media_properties', 'local_kaltura'), $prop);
+        $mediagroup[] =& $mform->createElement('button', 'media_properties',
+                                               get_string('media_properties', 'local_yukaltura'), $prop);
 
-        $mform->addGroup($mediagroup, 'media_group', '&nbsp;', '&nbsp;', false);
+        $mform->addGroup($mediagroup, 'media_group1', '&nbsp;', '&nbsp;', false);
 
+        if (get_config(KALTURA_PLUGIN_NAME, 'kalvidres_upload') == 1 && local_yukaltura_get_mymedia_permission()) {
+            $mediagroup = array();
+                $str = get_string('simple_upload', 'local_yumymedia');
+                $str .= ' (' . get_string('pc_recommended', 'local_yumymedia') . ')';
+            $mediagroup[] =& $mform->createElement('button', 'upload_media', $str, array());
+            if (get_config(KALTURA_PLUGIN_NAME, 'enable_webcam') == 1) {
+                $str = get_string('webcam_upload', 'local_yumymedia');
+                $str .= ' (' . get_string('pc_only', 'local_yumymedia') . ')';
+                $mediagroup[] =& $mform->createElement('button', 'record_media', $str, array());
+            }
+            $mform->addGroup($mediagroup, 'media_group2', '&nbsp;', '&nbsp;', false);
+        }
     }
 
     /**
@@ -284,6 +329,7 @@ class mod_kalvidres_mod_form extends moodleform_mod {
         global $CFG;
 
         $source = '';
+        $output = '';
 
         /*
          * tabindex -1 is required in order for the focus event to be capture

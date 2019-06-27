@@ -4,6 +4,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+#id_add_media {
+    float: left;
+}
+
 #id_media_properties,
 #id_media_preview {
     float: left;

@@ -40,11 +40,11 @@ $page = optional_param('page', 0, PARAM_INT);            // Mymedia Page ID.
 $sort = optional_param('sort', 'lastname', PARAM_TEXT);  // Sorting Key.
 $order = optional_param('order', 'ASC', PARAM_TEXT);     // Sorting Order (ASC or DESC).
 
-if ($sort != 'lastname' and $sort != 'firstname' and $sort != 'last' and $sort != 'plays' and $sort != 'views') {
+if ($sort != 'lastname' && $sort != 'firstname' && $sort != 'last' && $sort != 'plays' && $sort != 'views') {
     $sort = 'lastname';
 }
 
-if ($order != 'ASC' and $order != 'DESC') {
+if ($order != 'ASC' && $order != 'DESC') {
     $order = 'ASC';
 }
 

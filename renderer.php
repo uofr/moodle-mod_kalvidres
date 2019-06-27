@@ -85,7 +85,8 @@ class mod_kalvidres_renderer extends plugin_renderer_base {
         if (!empty($entry_obj)) {
 
             // Check if player selection is globally overridden
-            if (local_kaltura_get_player_override()) {
+            if (local_kaltura_get_player_override() &&
+                $kalvidres->uiconf_id != local_kaltura_get_player_uiconf('player_resource')) {
                 $new_player = local_kaltura_get_player_uiconf('player_resource');
                 $kalvidres->uiconf_id = $new_player;
             }
@@ -172,6 +173,72 @@ class mod_kalvidres_renderer extends plugin_renderer_base {
     }
 
     /**
+     * This function return HTML markup to display play/view counts.
+     * @param int $id - module id.
+     * @param object $kalvidres - instance object of YU Kaltura Media Resource.
+     * @return string - HTML markup to display link to access status page.
+     */
+    public function create_student_playsviews_markup($id, $kalvidres) {
+        global $COURSE, $USER, $DB;
+
+        $output = '';
+        $student = false;
+
+        $coursecontext = context_course::instance($COURSE->id);
+        $roles = get_user_roles($coursecontext, $USER->id);
+        foreach ($roles as $role) {
+            if ($role->shortname == 'student') {
+                $student = true;
+            }
+        }
+
+        if ($student == true) {
+            $stamp = time() - 3600 * $kalvidres->exclusion_time;
+
+            $plays = 0;
+            $views = 0;
+
+            $sql = 'select count(*) as plays from {logstore_standard_log} ';
+            $sql .= 'where component=\'mod_kalvidres\' and contextinstanceid = :mid and ';
+            $sql .= 'action = \'played\' and userid = :uid and timecreated <= :stamp';
+            $result = $DB->get_record_sql($sql, array('mid' => $id, 'uid' => $USER->id, 'stamp' => $stamp));
+
+            if (!empty($result)) {
+                $attr = array('align' => 'center');
+                $output .= html_writer::start_tag('div', $attr);
+                $plays = $result->plays;
+                $output .= get_string('your_plays', 'kalvidres', $plays);
+                $output .= html_writer::end_tag('div');
+            }
+
+            $sql = 'select count(*) as views from {logstore_standard_log} ';
+            $sql .= 'where component=\'mod_kalvidres\' and contextinstanceid = :mid and ';
+            $sql .= 'action = \'viewed\' and userid = :uid and timecreated <= :stamp';
+            $result = $DB->get_record_sql($sql, array('mid' => $id, 'uid' => $USER->id, 'stamp' => $stamp));
+
+            if (!empty($result)) {
+                $attr = array('align' => 'center');
+                $output .= html_writer::start_tag('div', $attr);
+                $views = $result->views;
+                $output .= get_string('your_views', 'kalvidres', $views);
+                $output .= html_writer::end_tag('div');
+            }
+
+            if ($kalvidres->exclusion_time > 0) {
+                $attr = array('align' => 'center');
+                $output .= html_writer::start_tag('div', $attr);
+                $output .= html_writer::start_tag('font', array('color' => 'red'));
+                $output .= get_string('delay_stats_desc', 'mod_kalvidres', $kalvidres->exclusion_time);
+                $output .= html_writer::end_tag('font');
+                $output .= html_writer::end_tag('div');
+            }
+
+        }
+
+        return $output;
+    }
+
+    /**
      * This function return HTML markup to display paging bar.
      * @param int $page - page number.
      * @return string - HTML markup to display paging bar.
@@ -233,22 +300,22 @@ class mod_kalvidres_renderer extends plugin_renderer_base {
 
             $coursecontext = context_course::instance($COURSE->id);
 
+            $mdata = $DB->get_records('course_modules', array('id' => $moduleid));
+
+            foreach ($mdata as $row) {
+                $instanceid = $row->instance;
+            }
+
             $query = 'select m.id, picture, m.firstname, m.lastname, m.firstnamephonetic, m.lastnamephonetic, m.middlename, ';
             $query .= 'm.alternatename, m.imagealt, m.email, n.plays, n.views, n.first, n.last ';
             $query .= 'from ((select distinct u.id, picture, u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, ';
             $query .= 'u.middlename, u.alternatename, u.imagealt, u.email ';
             $query .= 'from {role_assignments} a join {user} u ';
             $query .= 'on u.id=a.userid and a.contextid=:cid and a.roleid=:rid) m ';
-            $query .= 'left join (select v.userid, plays, views, least(firstview,ifnull(firstplay, firstview)) first, ';
-            $query .= 'greatest(ifnull(firstplay,firstview), ifnull(lastplay,lastview)) last ';
-            $query .= 'from ((select userid,count(timecreated) views, min(timecreated) firstview, max(timecreated) lastview ';
-            $query .= 'from {logstore_standard_log} where component=\'mod_kalvidres\' and ';
-            $query .= 'action=\'viewed\' and contextinstanceid=:mid1 group by userid) v ';
-            $query .= 'left join (select userid,count(timecreated) plays, min(timecreated) firstplay, max(timecreated) lastplay ';
-            $query .= 'from {logstore_standard_log} ';
-            $query .= 'where component=\'mod_kalvidres\' and action=\'played\' ';
-            $query .= 'and contextinstanceid=:mid2 group by userid) p on v.userid=p.userid)) n on n.userid=m.id) ';
-            $query .= 'order by :sort :order';
+            $query .= 'left join ';
+            $query .= '(select userid, plays, views, first, last from {kalvidres_log} ';
+            $query .= 'where instanceid=:instanceid) n on n.userid=m.id) ';
+            $query .= 'order by ' . $sort . ' ' . $order;
 
             $studentlist = $DB->get_recordset_sql($query,
                                                   array(
@@ -257,7 +324,8 @@ class mod_kalvidres_renderer extends plugin_renderer_base {
                                                       'mid1' => $moduleid,
                                                       'mid2' => $moduleid,
                                                       'sort' => $sort,
-                                                      'order' => $order
+                                                      'order' => $order,
+                                                      'instanceid' => $instanceid
                                                   )
                                                  );
 
@@ -282,7 +350,7 @@ class mod_kalvidres_renderer extends plugin_renderer_base {
                     $totalplays = $totalplays + $student->plays;
                     $totalviews = $totalviews + $student->views;
 
-                    if ($student->last != null and $student->last > 0) {
+                    if ($student->last != null and $student->last > 0 and $student->last > $recently) {
                         $recently = $student->last;
                     }
 

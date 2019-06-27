@@ -88,4 +88,21 @@ if ($student == true) {
         'context' => context_module::instance($cm->id)
     ));
     $event->trigger();
+
+    try {
+        $kalvidreslog = $DB->get_record('kalvidres_log',
+                                          array('instanceid' => $cm->instance, 'userid' => $USER->id));
+        $now = time();
+        if (empty($kalvidreslog)) {
+            $objectdata = array('instanceid' => $cm->instance, 'userid' => $USER->id, 'plays' => 1, 'views' => 1,
+                                'first' => $now, 'last' => $now);
+            $DB->insert_record('kalvidres_log', $objectdata);
+        } else {
+            $kalvidreslog->last = $now;
+            $kalvidreslog->plays = $kalvidreslog->plays + 1;
+            $DB->update_record('kalvidres_log', $kalvidreslog, false);
+        }
+    } catch (Exception $ex) {
+        print_error($ex->getMessage());
+    }
 }

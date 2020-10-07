@@ -25,6 +25,7 @@ $string['add_media'] = 'Add Media';
 $string['video_properties'] = 'Player properties';
 $string['upload_successful'] = 'Upload Successful';
 $string['video_converting'] = 'Your media is still converting. Please check the status of your media at a later time.';
+$string['video_deleted'] = 'This video has been deleted.';
 $string['vid_prop_name'] = 'Name:';
 $string['vid_prop_player'] = 'Player design:';
 $string['vid_prop_dimensions'] = 'Player dimensions:';

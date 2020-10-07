@@ -66,7 +66,7 @@ const registerEventListeners = (modal, uploadModal, contextid) => {
         uploadModal.hide();
         const entry = await KalturaAjax.getEntry(contextid, entryid);
         $(SELECTORS.ENTRY_ID).val(entry.id);
-        $(SELECTORS.ENTRY_THUMBNAIL).attr('src', entry.thumbnailUrl);
+        $(SELECTORS.ENTRY_THUMBNAIL).attr('src', entry.thumbnailUrl + '/width/360/height/200/type/3');
         $(SELECTORS.VIDEO_TITLE).val(entry.name);
         const selectedEntryText = await getString('selected_entry', 'local_kaltura', entry.name);
         $(SELECTORS.SELECTED_ENTRY_HEADER).text(selectedEntryText);

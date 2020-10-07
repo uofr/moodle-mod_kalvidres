@@ -84,10 +84,13 @@ class mod_kalvidres_renderer extends plugin_renderer_base {
         $markup = \local_kaltura\kaltura_player::get_player($entry_obj->objects[0]);
         $client->session->end();
 
-        if ($entry_obj->objects[0]->status != \KalturaEntryStatus::READY) {
+        if ($entry_obj->objects[0]->status == \KalturaEntryStatus::DELETED) {
+            $output .= \html_writer::tag('div', get_string('video_deleted', 'mod_kalvidres'), ['class' => 'alert alert-info']);
+        } else if ($entry_obj->objects[0]->status != \KalturaEntryStatus::READY) {
             $output .= \html_writer::tag('div', get_string('video_converting', 'mod_kalvidres'), ['class' => 'alert alert-info']);
+        } else {
+            $output .= \html_writer::tag('div', $markup, ['class' => 'kaltura-video embed-responsive embed-responsive-16by9']);
         }
-        $output .= \html_writer::tag('div', $markup, ['class' => 'kaltura-video embed-responsive embed-responsive-16by9']);
 
         return $output;
     }

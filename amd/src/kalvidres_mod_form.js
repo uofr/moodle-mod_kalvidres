@@ -21,7 +21,7 @@ const SELECTORS = {
     SELECTED_ENTRY_HEADER: '[data-region="selected-entry-header"]'
 };
 
-export const init = async (contextid, entryid, entryname, entrythumbnail) => {
+export const init = async (contextid, entryid, entryname, entrythumbnail, hasCe) => {
     try {
         const [modal, uploadModal] = await Promise.all([
             ModalFactory.create({type: ModalVideoPicker.getType()}),
@@ -32,6 +32,7 @@ export const init = async (contextid, entryid, entryname, entrythumbnail) => {
         modal.selectedEntryId = entryid;
         modal.selectedEntryName = entryname;
         modal.selectedEntryThumbnail = entrythumbnail;
+        modal.hasCe = hasCe;
 
         uploadModal.contextid = contextid;
 

@@ -229,6 +229,13 @@ function kalvidres_cm_info_dynamic(cm_info $cm) {
 
         // Check if the entry object is cached
         $entry_obj  = local_kaltura_get_ready_entry_object($media_entry->entry_id);
+        if (!$entry_obj) {
+            $client_legacy = \local_kaltura\kaltura_client::get_client('ce');
+            $client_legacy->setKs(\local_kaltura\kaltura_session_manager::get_user_session_legacy($client_legacy));
+            $entry_response = \local_kaltura\kaltura_entry_manager::get_entry($client_legacy, $media_entry->entry_id);
+            $entry_obj = $entry_response->objects[0];
+            $client_legacy->session->end();
+        }
 
 //$out = '{'.print_r($entry_obj,1).'}';
 

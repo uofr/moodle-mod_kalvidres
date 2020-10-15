@@ -73,7 +73,20 @@ class mod_kalvidres_mod_form extends moodleform_mod {
         $mform->addElement('static', '', '', $selected_entry_header);
 
         if ($this->current->entry_id) {
-            $entryobj = KalturaStaticEntries::getEntry($this->current->entry_id, null, false);
+            $client = \local_kaltura\kaltura_client::get_client();
+            $client->setKs(\local_kaltura\kaltura_session_manager::get_user_session($client));
+
+            $client_legacy = \local_kaltura\kaltura_client::get_client('ce');
+            $client_legacy->setKs(\local_kaltura\kaltura_session_manager::get_user_session_legacy($client_legacy));
+
+            $entry_response = \local_kaltura\kaltura_entry_manager::get_entry($client, $this->current->entry_id);
+            if (!$entry_response->totalCount) {
+                $entry_response = \local_kaltura\kaltura_entry_manager::get_entry($client_legacy, $this->current->entry_id);
+            }
+            $entryobj = $entry_response->objects[0];
+
+            $client->session->end();
+            $client_legacy->session->end();
         }
         $thumbnail_markup = $this->get_thumbnail_markup($entryobj);
         $mform->addElement('static', 'add_media_thumb', '&nbsp;', $thumbnail_markup);
@@ -93,12 +106,17 @@ class mod_kalvidres_mod_form extends moodleform_mod {
 
         $this->add_action_buttons();
 
+        $client = \local_kaltura\kaltura_client::get_client('ce');
+        $client->setKs(\local_kaltura\kaltura_session_manager::get_user_session_legacy($client));
+        $has_ce = \local_kaltura\kaltura_entry_manager::count_entries($client) > 0;
         $PAGE->requires->js_call_amd('mod_kalvidres/kalvidres_mod_form', 'init', [
             $PAGE->context->id,
             $this->current->entry_id,
             $this->current->video_title,
-            $entryobj->thumbnailUrl
+            $entryobj->thumbnailUrl,
+            $has_ce
         ]);
+        $client->session->end();
     }
 
     /**
@@ -113,7 +131,7 @@ class mod_kalvidres_mod_form extends moodleform_mod {
 
         $output .= html_writer::empty_tag('img', [
             'id' => 'media_thumbnail',
-            'src' => $entryobj ? $entryobj->thumbnailUrl . '/width/360/height/200/' : $CFG->wwwroot . '/local/kaltura/pix/vidThumb.png',
+            'src' => $entryobj ? $entryobj->thumbnailUrl : $CFG->wwwroot . '/local/kaltura/pix/vidThumb.png',
             'alt' => $entryobj ? $entryobj->name : get_string('media_select', 'kalvidres'),
             'title' => $entryobj ? $entryobj->name : get_string('media_select', 'kalvidres'), 
             'class' => 'kaltura-media-thumbnail'

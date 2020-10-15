@@ -80,9 +80,17 @@ class mod_kalvidres_renderer extends plugin_renderer_base {
         $output = '';
         $client = \local_kaltura\kaltura_client::get_client();
         $client->setKs(\local_kaltura\kaltura_session_manager::get_user_session($client));
+        $client_legacy = \local_kaltura\kaltura_client::get_client('ce');
+        $client_legacy->setKs(\local_kaltura\kaltura_session_manager::get_user_session_legacy($client_legacy));
         $entry_obj = \local_kaltura\kaltura_entry_manager::get_entry($client, $kalvidres->entry_id);
-        $markup = \local_kaltura\kaltura_player::get_player($entry_obj->objects[0]);
+        if (!$entry_obj->totalCount) {
+            $entry_obj = \local_kaltura\kaltura_entry_manager::get_entry($client_legacy, $kalvidres->entry_id);
+            $markup = \local_kaltura\kaltura_player::get_player_legacy($entry_obj->objects[0]);
+        } else {
+            $markup = \local_kaltura\kaltura_player::get_player($entry_obj->objects[0]);
+        }
         $client->session->end();
+        $client_legacy->session->end();
 
         if ($entry_obj->objects[0]->status == \KalturaEntryStatus::DELETED) {
             $output .= \html_writer::tag('div', get_string('video_deleted', 'mod_kalvidres'), ['class' => 'alert alert-info']);

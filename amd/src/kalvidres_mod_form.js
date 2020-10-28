@@ -34,8 +34,6 @@ export const init = async (contextid, entryid, entryname, entrythumbnail, hasCe)
         modal.selectedEntryThumbnail = entrythumbnail;
         modal.hasCe = hasCe;
 
-        uploadModal.contextid = contextid;
-
         registerEventListeners(modal, uploadModal, contextid);
     } catch(error) {
         Notification.exception(error);
@@ -51,8 +49,7 @@ const registerEventListeners = (modal, uploadModal, contextid) => {
     $(SELECTORS.OPEN_UPLOAD_MODAL).on('click', (e) => {
         e.preventDefault();
         const uploadFormType = $(e.currentTarget).attr('data-upload-type');
-        uploadModal.renderUploadForm(uploadFormType);
-        uploadModal.show();
+        uploadModal.renderUploadForm(uploadFormType, contextid);
     });
 
     subscribe(ModalVideoPickerEvents.entrySelected, async (entry) => {
